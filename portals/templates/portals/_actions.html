@@ -1,0 +1,37 @@
+<style>
+  .action-list { display: grid; gap: 12px;
+                 grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .action { border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  .action.recommended { border-color: var(--accent); }
+  .action.blocked { background: var(--bg); }
+  .btn { font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 8px;
+         border: 0; cursor: pointer; color: #fff; background: var(--accent); }
+  .btn.close { background: var(--critical); }
+  .btn.observer { background: var(--medium); }
+  .btn.question, .btn.unmark { background: var(--closed); }
+  .action.blocked .btn { background: var(--closed-bg); color: var(--muted); }
+  .tag { margin-left: 8px; font-size: 12px; color: var(--accent); font-weight: 600; }
+  .hint { margin-top: 8px; font-size: 14px; color: var(--critical); }
+  .confirm { display: block; margin-bottom: 10px; font-size: 14px; color: var(--medium); }
+</style>
+
+<div class="card">
+  <h2>Действия</h2>
+  <p class="muted">Рекомендуемое действие выделено рамкой. Недоступные действия серые: если нажать на них, система откажет и запишет попытку в журнал.</p>
+  <div class="action-list">
+    {% for s in action_states %}
+    <form method="post" action="{% url 'portals:action' portal.pk s.code %}"
+          class="action{% if not s.allowed %} blocked{% endif %}{% if s.recommended %} recommended{% endif %}">
+      {% csrf_token %}
+      {% if s.needs_confirmation %}
+        <label class="confirm">
+          <input type="checkbox" name="confirm" value="1"> {{ s.warning }}
+        </label>
+      {% endif %}
+      <button type="submit" class="btn {{ s.code }}">{{ s.label }}</button>
+      {% if s.recommended %}<span class="tag">рекомендуется</span>{% endif %}
+      {% if not s.allowed %}<div class="hint">Недоступно: {{ s.reason }}</div>{% endif %}
+    </form>
+    {% endfor %}
+  </div>
+</div>
