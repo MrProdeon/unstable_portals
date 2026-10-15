@@ -1,0 +1,106 @@
+{% extends "portals/base.html" %}
+
+{% block title %}{{ portal.name }}{% endblock %}
+
+{% block content %}
+<a class="back" href="{% url 'portals:list' %}">← Ко всем порталам</a>
+<h1>
+  {{ portal.name }}
+  {% if portal.under_question %}<span class="badge medium">под вопросом</span>{% endif %}
+</h1>
+
+<div class="card">
+  <div class="grid">
+    <div class="stat"><div class="label">Мир назначения</div><div class="value">{{ portal.destination_world }}</div></div>
+    <div class="stat"><div class="label">Статус</div><div class="value">{{ portal.get_status_display }}</div></div>
+    <div class="stat"><div class="label">Уровень энергии</div><div class="value">{{ portal.energy_level }}</div></div>
+    <div class="stat"><div class="label">Стабильность</div><div class="value">{{ portal.stability }}</div></div>
+    <div class="stat"><div class="label">До схлопывания</div><div class="value">{{ portal.time_left_display }}</div></div>
+    <div class="stat"><div class="label">Существ внутри</div><div class="value">{{ portal.creatures_count }}</div></div>
+  </div>
+</div>
+
+<div class="card reco {{ portal.recommendation.css }}">
+  <div class="muted">Рекомендуемое действие</div>
+  <div class="title">{{ portal.recommendation.label }}</div>
+  <div>{{ portal.recommendation.reason }}</div>
+</div>
+
+<div class="card">
+  <h2>Оценка риска</h2>
+  {% if portal.is_open %}
+    <p>
+      <span class="score">{{ portal.risk.score }}</span><span class="muted"> / 100</span>
+      &nbsp;<span class="badge {{ portal.risk.level }}">{{ portal.risk.level_label }} риск</span>
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Фактор</th><th>Значение</th><th>Вес</th><th>Вклад</th><th>Пояснение</th></tr>
+        </thead>
+        <tbody>
+          {% for f in portal.risk.factors %}
+          <tr>
+            <td>{{ f.label }}</td>
+            <td>{{ f.value }}</td>
+            <td>×{{ f.weight }}</td>
+            <td>{{ f.contribution|floatformat:1 }}</td>
+            <td class="muted">{{ f.note }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="muted">Портал закрыт, риск не рассчитывается.</p>
+  {% endif %}
+
+  <h2 style="margin-top:24px">Как считается риск</h2>
+  <div class="formula">
+    Риск = {{ formula.w_stability }} × (100 − стабильность)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ {{ formula.w_energy }} × энергия<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ {{ formula.w_time }} × фактор времени
+  </div>
+  <ul class="rules">
+    <li>Чем ниже стабильность и выше энергия, тем выше риск.</li>
+    <li>Фактор времени: если срок не задан или до схлопывания {{ formula.horizon }} ч и больше, он равен 0. Если срок истёк, он равен 100. Между этими значениями он растёт линейно.</li>
+    <li>Уровни: до {{ formula.low }} — низкий, от {{ formula.low }} до {{ formula.critical|add:"-1" }} — средний, {{ formula.critical }} и выше — критический.</li>
+  </ul>
+
+  <h2 style="margin-top:24px">Как выбирается действие</h2>
+  <ul class="rules">
+    <li>Портал закрыт — действий не требуется.</li>
+    <li>Срок схлопывания истёк — закрыть портал.</li>
+    <li>Критический риск и осталось меньше {{ formula.urgent }} ч — закрыть портал.</li>
+    <li>Критический риск — стабилизировать портал.</li>
+    <li>Средний риск и внутри есть существа — отправить наблюдателя.</li>
+    <li>Средний риск и существ нет — пометить «под вопросом».</li>
+    <li>Низкий риск — оставить открытым.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>История изменений</h2>
+  {% if history %}
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th>Когда</th><th>Что изменилось</th><th>Было</th><th>Стало</th></tr>
+      </thead>
+      <tbody>
+        {% for h in history %}
+        <tr>
+          <td>{{ h.changed_at|date:"d.m.Y H:i" }}</td>
+          <td>{{ h.field_label }}</td>
+          <td>{% if h.is_creation %}—{% else %}{{ h.old_value }}{% endif %}</td>
+          <td>{% if h.is_creation %}—{% else %}{{ h.new_value }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="muted">Записей пока нет.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Порталы{% endblock %}
+
+{% block content %}
+<h1>Порталы</h1>
+
+<div class="card">
+  {% if portals %}
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Название</th>
+          <th>Мир назначения</th>
+          <th>Энергия</th>
+          <th>Стабильность</th>
+          <th>До схлопывания</th>
+          <th>Существ</th>
+          <th>Статус</th>
+          <th>Риск</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for portal in portals %}
+        <tr class="clickable">
+          <td>
+            <a href="{% url 'portals:detail' portal.pk %}">{{ portal.name }}</a>
+            {% if portal.under_question %}<span class="badge medium">под вопросом</span>{% endif %}
+          </td>
+          <td>{{ portal.destination_world }}</td>
+          <td>{{ portal.energy_level }}</td>
+          <td>{{ portal.stability }}</td>
+          <td>{{ portal.time_left_display }}</td>
+          <td>{{ portal.creatures_count }}</td>
+          <td>{{ portal.get_status_display }}</td>
+          <td>
+            <span class="badge {{ portal.risk.level }}">
+              {{ portal.risk.level_label }}{% if portal.is_open %} · {{ portal.risk.score }}{% endif %}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <p><strong>Порталов пока нет.</strong></p>
+    <p>Добавьте первый портал в <a href="/admin/portals/portal/add/">админке</a>
+       или выполните команду <code>python manage.py seed_portals</code>.</p>
+  </div>
+  {% endif %}
+</div>
+<p class="muted">Открытые порталы идут первыми, внутри — по убыванию риска. Нажмите на название, чтобы открыть карточку.</p>
+{% endblock %}
