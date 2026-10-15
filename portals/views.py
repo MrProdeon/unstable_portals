@@ -7,6 +7,7 @@ from django.views.generic import DetailView, ListView
 
 from . import actions, services
 from .models import Portal
+from .summary import build_summary
 
 
 class PortalListView(ListView):
@@ -18,6 +19,11 @@ class PortalListView(ListView):
         portals = list(Portal.objects.all())
         portals.sort(key=lambda p: (not p.is_open, -p.risk.score, p.name))
         return portals
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["summary"] = build_summary(context["portals"])
+        return context
 
 
 class PortalDetailView(DetailView):

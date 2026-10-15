@@ -1,0 +1,59 @@
+<style>
+  .kpis { display: grid; gap: 14px; margin-bottom: 20px;
+          grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .kpi { margin: 0; padding: 16px 20px; }
+  .kpi .label { color: var(--muted); font-size: 13px; }
+  .kpi .num { font-size: 34px; font-weight: 700; line-height: 1.2; }
+  .kpi.crit .num { color: var(--critical); }
+  .kpi.warn .num { color: var(--medium); }
+  .kpi small { color: var(--muted); }
+  .attention li { display: flex; flex-wrap: wrap; gap: 8px 14px;
+                  align-items: center; padding: 10px 0;
+                  border-bottom: 1px solid var(--line); }
+  .attention li:last-child { border-bottom: 0; }
+  .attention { list-style: none; margin: 0; padding: 0; }
+  .attention .name { font-weight: 600; }
+</style>
+
+<section class="kpis">
+  <div class="card kpi">
+    <div class="label">Открыто</div>
+    <div class="num">{{ summary.open }}</div>
+  </div>
+  <div class="card kpi crit">
+    <div class="label">Критичных <small>(из открытых)</small></div>
+    <div class="num">{{ summary.critical }}</div>
+  </div>
+  <div class="card kpi">
+    <div class="label">Закрыто</div>
+    <div class="num">{{ summary.closed }}</div>
+  </div>
+  <div class="card kpi warn">
+    <div class="label">Требуют внимания</div>
+    <div class="num">{{ summary.attention_total }}</div>
+  </div>
+</section>
+
+<div class="card">
+  <h2>Требуют внимания в первую очередь</h2>
+  {% if summary.attention %}
+  <ol class="attention">
+    {% for p in summary.attention %}
+    <li>
+      <a class="name" href="{% url 'portals:detail' p.pk %}">{{ p.name }}</a>
+      <span class="badge {{ p.risk.level }}">{{ p.risk.level_label }} · {{ p.risk.score }}</span>
+      <span>До схлопывания: {{ p.time_left_display }}</span>
+      <span>Существ: {{ p.creatures_count }}</span>
+      <span class="muted">Рекомендуется: {{ p.recommendation.label }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  {% if summary.attention_total > summary.attention|length %}
+    <p class="muted">Показаны первые {{ summary.attention|length }} из {{ summary.attention_total }}.</p>
+  {% endif %}
+  {% elif summary.total == 0 %}
+    <p class="muted">Порталов пока нет, наблюдать не за чем.</p>
+  {% else %}
+    <p class="muted">Всё спокойно: открытых порталов со средним или критическим риском нет.</p>
+  {% endif %}
+</div>
