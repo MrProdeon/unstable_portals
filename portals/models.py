@@ -68,6 +68,7 @@ class Portal(models.Model):
             return "Да" if value else "Нет"
         return str(value)
 
+
     @transaction.atomic
     def save(self, *args, **kwargs):
         old = None
@@ -167,3 +168,37 @@ class PortalHistory(models.Model):
 
     def __str__(self):
         return f"{self.portal.name}: {self.field_label}"
+
+
+class EventLog(models.Model):
+    class Outcome(models.TextChoices):
+        SUCCESS = "success", "Выполнено"
+        REJECTED = "rejected", "Отклонено"
+
+    portal = models.ForeignKey(
+        Portal, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="events", verbose_name="Портал",
+    )
+    # Название хранится отдельно, чтобы запись не потеряла смысл,
+    # даже если портал удалят.
+    portal_name = models.CharField("Название портала", max_length=100)
+    action = models.CharField("Код действия", max_length=20)
+    action_label = models.CharField("Действие", max_length=100)
+    outcome = models.CharField("Результат", max_length=10, choices=Outcome.choices)
+    message = models.TextField("Что произошло")
+    created_at = models.DateTimeField("Когда", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Событие журнала"
+        verbose_name_plural = "Журнал событий"
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.created_at:%d.%m.%Y %H:%M} {self.portal_name}: {self.action_label}"
+
+    @classmethod
+    def record(cls, portal, action, label, outcome, message):
+        return cls.objects.create(
+            portal=portal, portal_name=portal.name, action=action,
+            action_label=label, outcome=outcome, message=message,
+        )

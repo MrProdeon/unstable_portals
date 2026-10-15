@@ -9,4 +9,5 @@ urlpatterns = [
     path("portals/<int:pk>/", views.PortalDetailView.as_view(), name="detail"),
     path("portals/<int:pk>/actions/<slug:action>/",
          views.PortalActionView.as_view(), name="action"),
+    path("log/", views.EventLogView.as_view(), name="log"),
 ]

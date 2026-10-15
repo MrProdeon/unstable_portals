@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Portal, PortalHistory
+from .models import EventLog, Portal, PortalHistory
 
 
 class PortalHistoryInline(admin.TabularInline):
@@ -23,3 +23,9 @@ class PortalAdmin(admin.ModelAdmin):
     list_filter = ("status", "under_question")
     search_fields = ("name", "destination_world")
     inlines = [PortalHistoryInline]
+
+@admin.register(EventLog)
+class EventLogAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "portal_name", "action_label", "outcome", "message")
+    list_filter = ("outcome", "action")
+    search_fields = ("portal_name", "message")

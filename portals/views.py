@@ -7,7 +7,6 @@ from django.views.generic import DetailView, ListView
 
 from . import actions, services
 from .models import Portal
-from .summary import build_summary
 
 
 class PortalListView(ListView):

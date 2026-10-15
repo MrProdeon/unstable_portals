@@ -1,0 +1,48 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Журнал событий{% endblock %}
+
+{% block content %}
+<h1>Журнал событий</h1>
+
+<div class="card">
+  {% if events %}
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th>Когда</th><th>Портал</th><th>Действие</th><th>Результат</th><th>Что произошло</th></tr>
+      </thead>
+      <tbody>
+        {% for e in events %}
+        <tr>
+          <td style="white-space:nowrap">{{ e.created_at|date:"d.m.Y H:i:s" }}</td>
+          <td>
+            {% if e.portal_id %}
+              <a href="{% url 'portals:detail' e.portal_id %}">{{ e.portal_name }}</a>
+            {% else %}{{ e.portal_name }}{% endif %}
+          </td>
+          <td>{{ e.action_label }}</td>
+          <td>
+            <span class="badge {% if e.outcome == 'success' %}low{% else %}critical{% endif %}">
+              {{ e.get_outcome_display }}
+            </span>
+          </td>
+          <td>{{ e.message }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+  <p class="muted">
+    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">← Новее</a>{% endif %}
+    Страница {{ page_obj.number }} из {{ paginator.num_pages }}
+    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Старее →</a>{% endif %}
+  </p>
+  {% endif %}
+  {% else %}
+  <div class="empty">Журнал пуст. Выполните любое действие на карточке портала.</div>
+  {% endif %}
+</div>
+{% endblock %}

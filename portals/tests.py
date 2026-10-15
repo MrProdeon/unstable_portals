@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from . import actions
-from .models import Portal
+from .models import Portal, EventLog
 
 
 def make_portal(**kwargs):
@@ -63,3 +63,21 @@ class StabilizeTests(TestCase):
         self.client.post(reverse("portals:action", args=[portal.pk, "stabilize"]))
         portal.refresh_from_db()
         self.assertEqual(portal.stability, 60)
+
+class EventLogTests(TestCase):
+    def test_log_after_several_operations(self):
+        portal = make_portal(stability=15, energy_level=80, creatures_count=2,
+                             collapse_at=timezone.now() + timedelta(hours=48))
+        url = lambda code: reverse("portals:action", args=[portal.pk, code])
+
+        self.client.post(url("stabilize"))   # выполнено
+        self.client.post(url("question"))    # выполнено
+        self.client.post(url("question"))    # отклонено (уже помечен)
+        self.client.post(url("close"))       # отклонено (нет подтверждения)
+        self.client.post(url("close"), {"confirm": "1"})   # выполнено
+        self.client.post(url("stabilize"))   # отклонено (закрыт)
+
+        outcomes = list(EventLog.objects.order_by("id")
+                        .values_list("outcome", flat=True))
+        self.assertEqual(outcomes, ["success", "success", "rejected",
+                                    "rejected", "success", "rejected"])
