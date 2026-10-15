@@ -3,10 +3,12 @@ from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.views import View
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, ListView, TemplateView
 
 from . import actions, services
-from .models import Portal
+from .models import EventLog, Portal
+from .summary import build_summary
+from .worklog import WORKLOG
 
 
 class PortalListView(ListView):
@@ -33,6 +35,7 @@ class PortalDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["history"] = self.object.history.all()
+        context["events"] = self.object.events.all()[:10]
         context["action_states"] = actions.action_states(self.object)
         context["formula"] = {
             "w_stability": services.WEIGHT_STABILITY,
@@ -59,7 +62,6 @@ class PortalActionView(View):
         label = actions.ACTION_LABELS[action]
 
         with transaction.atomic():
-            # Блокируем строку, чтобы два клика подряд не наложились.
             portal = get_object_or_404(Portal.objects.select_for_update(), pk=pk)
             try:
                 result = actions.execute(portal, action, confirmed=confirmed)
@@ -73,3 +75,19 @@ class PortalActionView(View):
                 messages.success(request, f"{result.label}. {result.message}")
 
         return redirect("portals:detail", pk=pk)
+
+
+class EventLogView(ListView):
+    model = EventLog
+    template_name = "portals/event_log.html"
+    context_object_name = "events"
+    paginate_by = 50
+
+
+class AIWorklogView(TemplateView):
+    template_name = "portals/ai_worklog.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["items"] = WORKLOG
+        return context

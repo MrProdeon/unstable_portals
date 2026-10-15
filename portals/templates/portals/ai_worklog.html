@@ -1,0 +1,41 @@
+{% extends "portals/base.html" %}
+
+{% block title %}AI Worklog{% endblock %}
+
+{% block content %}
+<style>
+  .qa { padding: 20px 22px; }
+  .qa .q { display: flex; gap: 12px; align-items: baseline; margin: 0 0 10px;
+           font-size: 18px; font-weight: 700; }
+  .qa .q .n { flex: none; min-width: 28px; height: 28px; line-height: 28px;
+              text-align: center; border-radius: 999px; font-size: 14px;
+              color: var(--accent); background: var(--bg);
+              border: 1px solid var(--line); }
+  .qa .a { margin-left: 40px; }
+  .qa .a p { margin: 0; }
+  .qa .a ol, .qa .a ul { margin: 0; padding-left: 22px; }
+  .qa .a li { margin-bottom: 8px; }
+  .qa .a li:last-child { margin-bottom: 0; }
+  @media (max-width: 600px) { .qa .a { margin-left: 0; } }
+</style>
+
+<h1>AI Worklog</h1>
+<p class="muted">Как при разработке приложения использовался ИИ: что делал я, что делал Claude, где он ошибся и как я проверял результат.</p>
+
+{% for item in items %}
+<section class="card qa">
+  <h2 class="q"><span class="n">{{ forloop.counter }}</span>{{ item.question }}</h2>
+  <div class="a">
+    {% for kind, content in item.answer %}
+      {% if kind == "p" %}
+        <p>{{ content }}</p>
+      {% elif kind == "ol" %}
+        <ol>{% for line in content %}<li>{{ line }}</li>{% endfor %}</ol>
+      {% elif kind == "ul" %}
+        <ul>{% for line in content %}<li>{{ line }}</li>{% endfor %}</ul>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

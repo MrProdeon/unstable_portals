@@ -64,20 +64,33 @@ class StabilizeTests(TestCase):
         portal.refresh_from_db()
         self.assertEqual(portal.stability, 60)
 
+
 class EventLogTests(TestCase):
     def test_log_after_several_operations(self):
         portal = make_portal(stability=15, energy_level=80, creatures_count=2,
                              collapse_at=timezone.now() + timedelta(hours=48))
         url = lambda code: reverse("portals:action", args=[portal.pk, code])
 
-        self.client.post(url("stabilize"))   # выполнено
-        self.client.post(url("question"))    # выполнено
-        self.client.post(url("question"))    # отклонено (уже помечен)
-        self.client.post(url("close"))       # отклонено (нет подтверждения)
-        self.client.post(url("close"), {"confirm": "1"})   # выполнено
-        self.client.post(url("stabilize"))   # отклонено (закрыт)
+        self.client.post(url("stabilize"))  # выполнено
+        self.client.post(url("question"))  # выполнено
+        self.client.post(url("question"))  # отклонено (уже помечен)
+        self.client.post(url("close"))  # отклонено (нет подтверждения)
+        self.client.post(url("close"), {"confirm": "1"})  # выполнено
+        self.client.post(url("stabilize"))  # отклонено (закрыт)
 
         outcomes = list(EventLog.objects.order_by("id")
                         .values_list("outcome", flat=True))
         self.assertEqual(outcomes, ["success", "success", "rejected",
                                     "rejected", "success", "rejected"])
+
+
+class AIWorklogPageTests(TestCase):
+    def test_page_opens_and_shows_questions(self):
+        response = self.client.get(reverse("portals:ai_worklog"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Какие AI-инструменты использовал")
+        self.assertContains(response, "Где AI ошибся")
+
+    def test_link_is_in_navigation(self):
+        response = self.client.get(reverse("portals:list"))
+        self.assertContains(response, reverse("portals:ai_worklog"))
