@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 
 from . import rules
-from .models import Portal
+from .models import EventLog, Portal
 
 STABILIZE = "stabilize"
 CLOSE = "close"
@@ -122,7 +122,16 @@ def _run(portal, action, confirmed):
 
 
 def execute(portal, action, confirmed=False):
-    return _run(portal, action, confirmed)
+    label = ACTION_LABELS.get(action, action)
+    try:
+        result = _run(portal, action, confirmed)
+    except ActionNotAllowed as exc:
+        EventLog.record(portal, action, label,
+                        EventLog.Outcome.REJECTED, exc.message)
+        raise
+    EventLog.record(portal, action, label,
+                    EventLog.Outcome.SUCCESS, result.message)
+    return result
 
 
 def action_states(portal):

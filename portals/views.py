@@ -6,7 +6,7 @@ from django.views import View
 from django.views.generic import DetailView, ListView
 
 from . import actions, services
-from .models import Portal
+from .models import EventLog, Portal
 
 
 class PortalListView(ListView):
@@ -38,6 +38,7 @@ class PortalDetailView(DetailView):
             "critical": services.CRITICAL_LIMIT,
             "urgent": services.URGENT_HOURS,
         }
+        context["events"] = self.object.events.all()[:10]
         return context
 
 
@@ -68,3 +69,9 @@ class PortalActionView(View):
                 messages.success(request, f"{result.label}. {result.message}")
 
         return redirect("portals:detail", pk=pk)
+
+class EventLogView(ListView):
+    model = EventLog
+    template_name = "portals/event_log.html"
+    context_object_name = "events"
+    paginate_by = 50
